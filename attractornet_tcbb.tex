@@ -17,8 +17,9 @@ to Real Networks}
 \author{Kun~Zhang%
 \thanks{K.~Zhang is with the University of Leeds, Leeds, U.K.
 (e-mail: pjdf0740@leeds.ac.uk).}%
-\thanks{Manuscript prepared June 2026. Code, synthetic generators, and trained models
-will be released upon acceptance.}}
+\thanks{Manuscript prepared June 2026. Code, synthetic generators, trained models, and
+the symbolic label cache are publicly available at
+\url{https://github.com/Beiciccc/attractornet}.}}
 
 \markboth{IEEE/ACM Transactions on Computational Biology and Bioinformatics}%
 {Zhang: Logic-Aware GNNs Predict Asynchronous Reachability in Boolean GRNs}
@@ -668,8 +669,9 @@ a propagation-matched architecture is what captures it.
 All labels are computed by exact symbolic tools (state-transition-graph enumeration;
 \texttt{biodivine\_aeon} BDD reachability); no human annotation or external API is used.
 The synthetic generators, the GNN, and all baselines run on a single GPU; the curated
-networks are the public biodivine-boolean-models collection. Code and trained models
-will be released upon acceptance.
+networks are the public biodivine-boolean-models collection. All code, trained models,
+and the symbolic label cache (sufficient to reproduce every reported number, including
+the bootstrap CIs) are available at \url{https://github.com/Beiciccc/attractornet}.
 
 \begin{thebibliography}{99}
 \bibitem{kauffman} S. A. Kauffman, ``Metabolic stability and epigenesis in randomly
