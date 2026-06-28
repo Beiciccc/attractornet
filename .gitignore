@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.log
+# LaTeX build artifacts
+*.aux
+*.fls
+*.fdb_latexmk
+*.out
+*.synctex.gz
+# abandoned colored-task cache
+real_cache_colored.pkl
+
+# internal working drafts (contain review notes / TODOs)
+attractornet_draft.md
+attractornet_paper.md
