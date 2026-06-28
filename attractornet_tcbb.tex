@@ -328,7 +328,7 @@ distribution shift that artificially depresses scores. Balancing removes this co
 for $84\%$ of wirings (has-cyclic) and $88\%$ (reachability)---so on these instances
 any topology-only predictor is, by construction, near-chance. Empirically a topology
 predictor reaches \auroc{} $0.558$, a shuffle-label null $0.52$
-(Table~\ref{tab:identify}, Fig.~\ref{fig:1}). The signed graph (Thomas level) helps for
+(Table~\ref{tab:identify}, Fig.~\ref{fig:learn}a). The signed graph (Thomas level) helps for
 has-cyclic ($0.86$) but remains at chance for reachability ($0.566$); only features
 that read the logic predict reachability ($0.92$). Thus the logic, not the wiring,
 carries the reachability signal.
@@ -371,13 +371,20 @@ gain beyond $\lambda$ & $+0.073$ & $+0.772$\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=0.92\columnwidth]{fig_1_identifiability.pdf}
-\caption{The interaction graph is at chance; the logic decides. Within-graph \auroc{}
-by feature group for has-cyclic and asynchronous reachability.}
-\label{fig:1}
-\end{figure}
+\includegraphics[width=0.99\textwidth]{fig_composite_learn.pdf}
+\caption{The logic, not the wiring, carries learnable reachability structure.
+\textbf{a}, Within-graph \auroc{} by feature group (de-confounded): topology is at
+chance for both tasks, the signed graph helps only has-cyclic, and only logic-aware
+features predict reachability. \textbf{b}, The GNN's advantage is task-specific---it
+beats the all-bits tree on asynchronous reachability (propagation-shaped) but loses on
+the global has-cyclic property. \textbf{c}, Sign-aware propagation, not canalization:
+in-distribution (open bars) and zero-shot transfer (filled bars) \auroc{} for the GNN
+variants and the canalization baselines; the GNN-sign model (blue) stays high on
+transfer while the CANA tree drops below chance. Error bars: std over $3$ seeds.}
+\label{fig:learn}
+\end{figure*}
 
 \section{Method}
 \label{sec:method}
@@ -462,19 +469,12 @@ On the de-confounded within-graph split the flat-TT tree---which has \emph{all} 
 logic bits---reaches $0.803$ (has-cyclic) and $0.921$ (reachability), far above the
 $0.52$ null and generalizing leave-graph-out ($0.819/0.916$). The GNN beats the flat-TT
 tree on \emph{reachability} ($0.962$ vs $0.921$) but \emph{loses} on the global
-\emph{has-cyclic} property ($0.751$ vs $0.803$, Fig.~\ref{fig:4}). This selective win is
+\emph{has-cyclic} property ($0.751$ vs $0.803$, Fig.~\ref{fig:learn}b). This selective win is
 the signature of an inductive bias, not raw capacity: message passing captures the
 propagation structure of reachability, whereas a feature-interaction tree does as well
 or better on a property that is not propagation-shaped. The GNN is thus the right tool
 specifically for reachability.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.82\columnwidth]{fig_4_taskspecific.pdf}
-\caption{The GNN wins only where propagation matters: it beats the all-bits tree on
-asynchronous reachability but not on the global has-cyclic property.}
-\label{fig:4}
-\end{figure}
 
 \subsection{Zero-shot transfer to real GRNs}
 \label{sec:transfer}
@@ -486,7 +486,7 @@ within-network correlation. The size-agnostic GNN attains pooled \auroc{}
 $\mathbf{0.906}$, $95\%$ CI $[0.879,0.932]$, versus $0.816$ $[0.794,0.836]$ for the
 size-agnostic feature tree; the paired difference is $+0.091$, $95\%$ CI
 $[0.064,0.116]$, which excludes zero. The per-net \auroc{} distribution is right-skewed
-(median $0.99$, IQR $[0.85,1.00]$, mean $0.90$; Fig.~\ref{fig:3}); we report the pooled
+(median $0.99$, IQR $[0.85,1.00]$, mean $0.90$; Fig.~\ref{fig:transfer}a); we report the pooled
 mean as the headline and the median only as a descriptor of the typical network. The
 flat-TT tree is \emph{inapplicable} at these sizes (variable $n$ and arity), and exact
 solvers do not generalize---they recompute per network.
@@ -495,24 +495,29 @@ solvers do not generalize---they recompute per network.
 what one might guess, this tail is \emph{not} explained by size: $10/12$ have $n\ge15$,
 the median tail size is $21$, the worst case is $n=28$ (\auroc{} $0.222$), and across all
 $118$ networks per-net \auroc{} is essentially uncorrelated with size (Spearman
-$\rho=-0.14$, $p=0.14$; Fig.~\ref{fig:3}, left). The tail instead comprises networks whose
+$\rho=-0.14$, $p=0.14$; Fig.~\ref{fig:transfer}a, left). The tail instead comprises networks whose
 wiring or sign structure is atypical relative to the synthetic training distribution;
 characterizing these hard cases precisely is left to future work.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig_3_pernet_transfer.pdf}
-\caption{Zero-shot transfer holds across network sizes ($118$ real GRNs). Left: per-net
-\auroc{} vs size; right: distribution with median $0.99$ and mean $0.90$.}
-\label{fig:3}
-\end{figure}
+\includegraphics[width=0.99\textwidth]{fig_composite_transfer.pdf}
+\caption{Zero-shot transfer to real GRNs, and why the quiescent task is principled.
+\textbf{a}, Per-net \auroc{} of the synthetic-trained GNN on the $118$ real BBM
+networks vs network size (left), with the right-skewed distribution (right; median
+$0.99$, mean $0.90$); transfer is stable across sizes. \textbf{b}, Mean fraction of
+genes reachable under four driving conditions: only the quiescent inputs-OFF task we
+study (green) avoids saturation and falls in the informative band, so it is the
+principled non-degenerate choice rather than a cherry-picked one.}
+\label{fig:transfer}
+\end{figure*}
 
 \subsection{The gain is sign-aware propagation, not canalization}
 \label{sec:ablation}
 A natural concern is that reachability is recomputable from known \emph{local} logic
 features (canalization, effective connectivity), so that transfer is parasitic on real
 GRNs being heavily canalizing. We refute this two ways (Table~\ref{tab:ablation},
-Fig.~\ref{fig:2}).
+Fig.~\ref{fig:learn}c).
 
 First, an ablation of three GNN variants: \emph{sign} (separate $\pm$ transforms),
 \emph{no-sign} (message passing, sign ignored), and \emph{MLP} (no message passing---a
@@ -556,14 +561,6 @@ CANA effective-connectivity tree & $0.887\pm0.002$ & $0.465\pm0.009$\\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{fig_2_ablation_cana.pdf}
-\caption{Sign-aware propagation, not canalization. In-distribution and zero-shot
-transfer \auroc{} for the GNN variants and the canalization baselines; the CANA tree
-anti-transfers below chance.}
-\label{fig:2}
-\end{figure}
 
 \subsection{Controls}
 Beyond the chaos control (Table~\ref{tab:chaos}) and the shuffle-null and leave-graph-out
@@ -637,7 +634,7 @@ Per-node reachability difficulty depends strongly on the \emph{driving condition
 the quiescent activation task we study is the principled non-degenerate choice rather
 than a hand-picked one. We verified this on the real BBM networks: the all-OFF /
 inputs-OFF convention is well-behaved (pooled base $0.34$), whereas the natural
-alternatives all \emph{saturate} (Fig.~\ref{fig:driving})---a free-input ``activatable
+alternatives all \emph{saturate} (Fig.~\ref{fig:transfer}b)---a free-input ``activatable
 under some signal'' variant (mean base $0.88$), a fully-stimulated condition (inputs
 fixed ON; mean per-net base $0.82$), and a silenceability condition (reaching $0$ from
 the all-ON state; mean base $0.93$) each make almost every gene reachable, leaving little
@@ -646,15 +643,6 @@ one biologically meaningful condition that yields a non-degenerate label; charac
 the framework under richer, non-saturating multi-signal conditions is important future
 work.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.92\columnwidth]{fig_driving.pdf}
-\caption{Only the quiescent condition is non-degenerate. Mean per-net fraction of genes
-reachable on the real BBM networks under four driving conditions; the quiescent
-inputs-OFF task we study (green) is the only one that avoids saturation, so it is the
-principled rather than a cherry-picked choice.}
-\label{fig:driving}
-\end{figure}
 There is a genuine synthetic$\to$real distribution shift (synthetic activation base rate
 $0.86$ vs real $0.34$); the GNN transfers despite it---the central strength---but a
 synthetic ensemble matched to GRN statistics (scale-free wiring, realistic
