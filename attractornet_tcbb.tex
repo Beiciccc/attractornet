@@ -637,13 +637,24 @@ Per-node reachability difficulty depends strongly on the \emph{driving condition
 the quiescent activation task we study is the principled non-degenerate choice rather
 than a hand-picked one. We verified this on the real BBM networks: the all-OFF /
 inputs-OFF convention is well-behaved (pooled base $0.34$), whereas the natural
-alternatives all \emph{saturate}---a free-input ``activatable under some signal'' variant,
-a fully-stimulated condition (inputs fixed ON; mean per-net base $0.82$), and a
-silenceability condition (reaching $0$ from the all-ON state; mean base $0.93$) each make
-almost every gene reachable, leaving little to predict. The quiescent condition is thus
-not cherry-picked for learnability but is the one biologically meaningful condition that
-yields a non-degenerate label; characterizing the framework under richer, non-saturating
-multi-signal conditions is important future work.
+alternatives all \emph{saturate} (Fig.~\ref{fig:driving})---a free-input ``activatable
+under some signal'' variant (mean base $0.88$), a fully-stimulated condition (inputs
+fixed ON; mean per-net base $0.82$), and a silenceability condition (reaching $0$ from
+the all-ON state; mean base $0.93$) each make almost every gene reachable, leaving little
+to predict. The quiescent condition is thus not cherry-picked for learnability but is the
+one biologically meaningful condition that yields a non-degenerate label; characterizing
+the framework under richer, non-saturating multi-signal conditions is important future
+work.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.92\columnwidth]{fig_driving.pdf}
+\caption{Only the quiescent condition is non-degenerate. Mean per-net fraction of genes
+reachable on the real BBM networks under four driving conditions; the quiescent
+inputs-OFF task we study (green) is the only one that avoids saturation, so it is the
+principled rather than a cherry-picked choice.}
+\label{fig:driving}
+\end{figure}
 There is a genuine synthetic$\to$real distribution shift (synthetic activation base rate
 $0.86$ vs real $0.34$); the GNN transfers despite it---the central strength---but a
 synthetic ensemble matched to GRN statistics (scale-free wiring, realistic
