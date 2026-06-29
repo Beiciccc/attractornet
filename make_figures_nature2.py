@@ -54,7 +54,9 @@ def composite_learn():
     groups = ["topology", "signed\ngraph", "logic-\naware"]
     cyc = [0.558, 0.860, 0.803]; reach = [0.558, 0.566, 0.921]
     x = np.arange(3); w = 0.38
-    chance(ax, 2.45, ha="right")
+    # chance line only (all bars exceed 0.5, so a text label would sit on the bars;
+    # the dashed line at the 0.5 tick reads as chance unambiguously for AUROC)
+    ax.axhline(0.5, ls=(0, (5, 3)), lw=0.7, color=N["chance"], zorder=1)
     ax.bar(x - w/2, cyc, w, color=N["grey"], label="has-cyclic")
     ax.bar(x + w/2, reach, w, color=N["gnn"], label="reachability")
     ax.set_xticks(x); ax.set_xticklabels(groups)
