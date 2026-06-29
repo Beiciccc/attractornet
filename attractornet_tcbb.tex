@@ -112,7 +112,8 @@ source of the gain (\S\ref{sec:method},~\S\ref{sec:ablation}).
 \item \emph{Zero-shot transfer to real GRNs.} Trained only on synthetic BNs, the GNN
 predicts per-node activation reachability on real biodivine-boolean-models networks at
 pooled \auroc{} $0.91$ ($95\%$ CI $[0.88,0.93]$), beating size-agnostic feature
-baselines by ${+}0.08$ and a CANA baseline by ${+}0.45$ (\S\ref{sec:transfer}).
+baselines by ${+}0.09$ and a CANA baseline that collapses below chance on transfer
+(\S\ref{sec:transfer}).
 \item \emph{A reproducible, annotation-free pipeline}: an exact state-transition-graph
 oracle for synthetic networks and symbolic BDD reachability for real ones, on a single
 GPU.
@@ -178,9 +179,9 @@ patterns, with no asynchronous reachability and no transfer. Weidner \emph{et
 al.}~\cite{weidner2021} rank node dynamic-impact from graph-theoretic features (a
 forest on graph measures); this is exactly our topology baseline, which we show is
 near-chance for reachability. GATTACA~\cite{gattaca} pairs a GNN with reinforcement
-learning for cellular-reprogramming \emph{control}, but \emph{assumes} attractors are
-pre-computed by a separate procedure, a different task in which the dynamics are handed to
-the model rather than predicted. To our knowledge, no prior work learns to predict
+learning to \emph{control} cellular reprogramming---learning which genes to perturb to
+steer the network toward a target attractor---a control task rather than forward-dynamics
+prediction, and one that does not predict per-node reachability. To our knowledge, no prior work learns to predict
 asynchronous reachability of BNs from local logic, and none demonstrates
 synthetic$\to$real transfer.
 
@@ -383,7 +384,10 @@ transfer while the CANA tree drops below chance. Error bars: std over $3$ seeds.
 \emph{any} in-degree, so the same encoder applies to synthetic nodes of in-degree $4$
 and real nodes of in-degree $15$ (Table~\ref{tab:feats}). None is a fixed-width truth
 table; for high-arity real nodes the function-derived features (bias, sensitivity,
-canalizing depth) are estimated by sampling, keeping per-node cost bounded.
+canalizing depth) are estimated by sampling, keeping per-node cost bounded. These
+features are thus computed exactly on the low-arity synthetic training nodes but
+sampled on high-arity transfer nodes, a mild train-to-test feature-estimation shift we
+note as a limitation.
 
 \begin{table}[t]
 \caption{Arity-invariant per-node features.}
@@ -461,11 +465,19 @@ On the de-confounded within-graph split the flat-TT tree, which has \emph{all} t
 logic bits, reaches $0.803$ (has-cyclic) and $0.921$ (reachability), far above the
 $0.52$ null and generalizing leave-graph-out ($0.819/0.916$). The GNN beats the flat-TT
 tree on \emph{reachability} ($0.962$ vs $0.921$) but \emph{loses} on the global
-\emph{has-cyclic} property ($0.751$ vs $0.803$, Fig.~\ref{fig:learn}b). A win on one task
+\emph{has-cyclic} property ($0.751$ vs $0.803$, Fig.~\ref{fig:learn}b); the sign-aware
+ablation harness of Table~\ref{tab:ablation}, which uses a larger synthetic-training
+budget, reports higher absolute in-distribution values ($0.984$ vs $0.929$) with the same
+ranking. A win on one task
 and a loss on the other points to an inductive bias rather than to greater capacity:
 message passing captures the propagation structure of reachability, whereas a
 feature-interaction tree does as well or better on a property that is not
-propagation-shaped. The GNN is therefore suited specifically to reachability.
+propagation-shaped. (This GNN-vs-tree comparison differs in input representation as well
+as architecture; the sign\,/\,no-sign\,/\,MLP ablation of \S\ref{sec:ablation}, which holds
+the input features fixed, isolates the architectural contribution.) The GNN is therefore
+suited specifically to reachability, and its cross-network generalization is established
+directly by the zero-shot transfer of \S\ref{sec:transfer} (a leave-graph-out test by
+construction).
 
 
 \subsection{Zero-shot transfer to real GRNs}
@@ -477,27 +489,31 @@ is the pooled \auroc{} over all $3659$ nodes of the $118$ real GRNs, with a
 within-network correlation. The size-agnostic GNN attains pooled \auroc{}
 $\mathbf{0.906}$, $95\%$ CI $[0.879,0.932]$, versus $0.816$ $[0.794,0.836]$ for the
 size-agnostic feature tree; the paired difference is $+0.091$, $95\%$ CI
-$[0.064,0.116]$, which excludes zero. The per-net \auroc{} distribution is right-skewed
+$[0.064,0.116]$, which excludes zero. The per-net \auroc{} distribution is left-skewed
 (median $0.99$, IQR $[0.85,1.00]$, mean $0.90$; Fig.~\ref{fig:transfer}a); we report the pooled
 mean as the headline and the median only as a descriptor of the typical network. The
 flat-TT tree is \emph{inapplicable} at these sizes (variable $n$ and arity), and exact
 solvers do not generalize; they recompute per network.
 
-\textbf{Failure analysis.} $12$ of $118$ networks fall below \auroc{} $0.7$. Contrary to
-what one might guess, this tail is \emph{not} explained by size: $10/12$ have $n\ge15$,
-the median tail size is $21$, the worst case is $n=28$ (\auroc{} $0.222$), and across all
-$118$ networks per-net \auroc{} is essentially uncorrelated with size (Spearman
-$\rho=-0.14$, $p=0.14$; Fig.~\ref{fig:transfer}a, left). The tail instead comprises networks whose
-wiring or sign structure is atypical relative to the synthetic training distribution;
-characterizing these hard cases precisely is left to future work.
+\textbf{Failure analysis.} $12$ of $118$ networks fall below \auroc{} $0.7$. Size alone
+does not cleanly predict this tail: across all $118$ networks per-net \auroc{} shows no
+\emph{significant} monotone correlation with size (Spearman $\rho=-0.14$, $p=0.14$,
+$95\%$ CI $[-0.31,+0.04]$; Fig.~\ref{fig:transfer}a, left), as most networks score near
+$1.0$ regardless of size. The failures do, however, fall in the size-\emph{extrapolation}
+regime: $10/12$ have $n\ge15$ (median tail size $21$, worst case $n=28$ at \auroc{}
+$0.222$), i.e.\ larger than every synthetic training network ($n\le16$). The tail thus
+comprises larger networks whose wiring or sign structure is also atypical relative to the
+synthetic training distribution; characterizing these hard cases, and disentangling size
+extrapolation from structural atypicality, is left to future work.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.99\textwidth]{fig_composite_transfer.pdf}
 \caption{Zero-shot transfer to real GRNs, and why the quiescent task is principled.
 \textbf{a}, Per-net \auroc{} of the synthetic-trained GNN on the $118$ real BBM
-networks vs network size (left), with the right-skewed distribution (right; median
-$0.99$, mean $0.90$); transfer is stable across sizes. \textbf{b}, Mean fraction of
+networks vs network size (left), with the left-skewed distribution (right; median
+$0.99$, mean $0.90$); transfer shows no significant monotone size trend, though the
+failure tail falls in the size-extrapolation regime. \textbf{b}, Mean fraction of
 genes reachable under four driving conditions: only the quiescent inputs-OFF task we
 study (green) avoids saturation and falls in the informative band, so it is the
 principled non-degenerate choice rather than a cherry-picked one.}
@@ -516,7 +532,7 @@ First, an ablation of three GNN variants: \emph{sign} (separate $\pm$ transforms
 \emph{no-sign} (message passing, sign ignored), and \emph{MLP} (no message passing, a
 neural model on the per-node features, i.e.\ a neural canalization baseline). In
 distribution, message passing adds ${+}0.026$ over the MLP and sign-awareness a further
-${+}0.021$; on real GRNs the effect sharpens: sign-awareness adds ${+}0.093$, with the
+${+}0.021$; on real GRNs the effect sharpens: sign-awareness adds ${+}0.091$, with the
 sign-agnostic GNN collapsing to the feature-baseline level. Propagation, and the sign of
 regulation, are what the GNN exploits.
 
@@ -535,10 +551,12 @@ rather than a re-encoding of local canalization.
 
 \begin{table}[t]
 \caption{Per-node activation reachability: the GNN vs canalization baselines
-(mean$\pm$std over $3$ training seeds). The sign-aware transfer figure here
-($0.911$) is consistent with the network-level cluster-bootstrap headline of
-\S\ref{sec:transfer} ($0.906$, $95\%$ CI $[0.879,0.932]$); the two harnesses differ
-only in synthetic-training budget.}
+(mean$\pm$std over $3$ training seeds). This ablation harness uses a larger
+synthetic-training budget than the main experiment of \S\ref{sec:transfer}, so its
+absolute \auroc{} values run slightly higher (both in distribution and on transfer)
+while the rankings agree; the sign-aware transfer figure here ($0.911$) is consistent
+with the cluster-bootstrap headline ($0.906$, $95\%$ CI $[0.879,0.932]$). The MLP
+variant is an in-distribution diagnostic and was not evaluated on transfer ($-$).}
 \label{tab:ablation}
 \centering
 \begin{tabular}{lcc}
@@ -558,10 +576,14 @@ CANA effective-connectivity tree & $0.887\pm0.002$ & $0.465\pm0.009$\\
 \subsection{Controls}
 Beyond the chaos control (Table~\ref{tab:chaos}) and the shuffle-null and leave-graph-out
 checks, we verify the reachability signal is not a trivial output-bias artifact
-(Table~\ref{tab:trivial}): a mean-output-bias-only predictor reaches just $0.716$ versus
-$0.921$ for the full model, and predictability persists ($0.897$) for a non-trivial
-target state where a bias predictor is even weaker ($0.671$). All transfer splits are
-de-confounded for the random/canalizing logic mix.
+(Table~\ref{tab:trivial}). Here the prediction target is whether a designated state is
+reachable from quiescence: the \emph{all-ones target} is the all-ON state (tracking the
+per-node activation task), and the \emph{non-trivial target} is a fixed non-constant
+state (the alternating $0101\ldots$ bit pattern), whose base rate is less aligned with
+mean output bias. A mean-output-bias-only predictor reaches just $0.716$ versus $0.921$
+for the full model on the all-ones target, and predictability persists ($0.897$) on the
+non-trivial target where the bias predictor is even weaker ($0.671$). All transfer splits
+are de-confounded for the random/canalizing logic mix.
 
 \begin{table}[t]
 \caption{Trivial-bias control (reachability \auroc{}).}
@@ -585,14 +607,16 @@ collection~\cite{yeast_cc} ($n=20$), and ask which genes
 are activatable from G1 quiescence (the all-OFF state). The predictor attains \auroc{}
 $0.91$ over all $20$ genes (thresholded accuracy $0.70$, $14/20$ genes correct): it ranks
 the core cyclins and regulators (Clb2, Clb5, Cdh1, Sic1, Whi5) as activatable and the
-cell-size, spindle, and budding checkpoints (Size, SpindleCP, BuddingCP) and Cln2 as
+spindle and budding checkpoints (SpindleCP, BuddingCP), the Start transition, the Cdc14
+phosphatase, and the G1 cyclin Cln2 as
 \emph{not} spontaneously activatable from quiescence (Table~\ref{tab:vignette}), which is qualitatively
 consistent with cell-cycle entry requiring size and signal cues rather than arising
 spontaneously. The errors are intermediate regulators near the activatable boundary
 (e.g.\ Cdc20, Cln3, FEAR). This is an \emph{illustration} of the prediction, not an
 independent validation: the labels here are themselves from the exact oracle, so the
 vignette shows what the zero-shot predictor recovers on a familiar network rather than
-establishing a new biological finding.
+establishing a new biological finding. As a single $20$-gene network, the reported
+\auroc{} is an illustrative point estimate without a confidence interval.
 
 \begin{table}[t]
 \caption{Zero-shot per-gene activation-reachability predictions on the budding-yeast
@@ -654,9 +678,10 @@ reads the local logic predicts asynchronous reachability, and it beats an
 all-truth-table-bits model exactly where propagation matters. Trained only on small
 synthetic networks, the same model transfers zero-shot to real gene-regulatory networks
 and outperforms every size-agnostic baseline, including a canalization model that does
-not transfer at all. The logic, then, carries learnable and transferable reachability
-structure that no graph-only model can recover, and a propagation-matched architecture
-is what brings it within reach.
+not transfer at all. The logic, then, carries learnable reachability structure that a
+graph-only model cannot recover (established in distribution, \S\ref{sec:identifiability})
+and that transfers across networks, and a propagation-matched architecture is what brings
+it within reach.
 
 \section*{Reproducibility}
 All labels are computed by exact symbolic tools (state-transition-graph enumeration;
