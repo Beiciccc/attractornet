@@ -104,8 +104,6 @@ def composite_learn():
     ax.set_ylim(0.4, 1.04); ax.set_yticks([0.4, 0.6, 0.8, 1.0])
     ax.set_ylabel("per-node reach. AUROC")
     ax.set_title("sign-aware propagation,\nnot canalization", color=N["ink"])
-    ax.text(0.02, 0.07, "open = in-distribution   filled = zero-shot transfer", fontsize=5.6,
-            color=N["grey_d"], transform=ax.transAxes)
     panel(ax, "c", x=-0.24)
 
     save(fig, "fig_composite_learn")
@@ -126,9 +124,11 @@ def composite_transfer():
     axs.axhline(med, ls="--", lw=0.8, color=N["drop"], zorder=2)
     axs.axhline(mean, ls="-", lw=0.8, color=N["ink"], zorder=2)
     axs.axhline(0.5, ls=":", lw=0.7, color=N["chance"], zorder=2)
-    # direct labels in the empty left margin (smallest network is n=6)
-    axs.text(1.0, med + 0.006, f"median {med:.2f}", fontsize=6, color=N["drop"], va="bottom")
-    axs.text(1.0, mean - 0.006, f"mean {mean:.2f}", fontsize=6, color=N["ink"], va="top")
+    # direct labels in the empty bottom-right corner (no points there at high n)
+    axs.text(0.985, 0.115, f"median {med:.2f}", transform=axs.transAxes, ha="right",
+             va="bottom", fontsize=6, color=N["drop"])
+    axs.text(0.985, 0.03, f"mean {mean:.2f}", transform=axs.transAxes, ha="right",
+             va="bottom", fontsize=6, color=N["ink"])
     axs.annotate("chance", xy=(nn.max(), 0.5), xytext=(0, 1.5), textcoords="offset points",
                  fontsize=6, color=N["grey_d"], ha="right", va="bottom")
     axs.set_xlabel("network size $n$ (genes)"); axs.set_ylabel("per-net GNN AUROC")
@@ -147,9 +147,9 @@ def composite_transfer():
     conds = ["quiescent\n[ours]", "stimulated", "free-input", "silenceable"]
     base = [0.34, 0.82, 0.88, 0.93]
     cols = [N["good"], N["grey"], N["grey"], N["grey"]]
-    axb.axhspan(0.2, 0.7, color=N["good"], alpha=0.10, zorder=0)
-    axb.annotate("informative\n(non-degenerate)", xy=(0, 0.585), fontsize=6, color=N["good"],
-                 ha="center", va="center", linespacing=1.0)
+    axb.axhspan(0.2, 0.7, color=N["good"], alpha=0.12, zorder=0)
+    axb.text(-0.44, 0.605, "informative\n(non-degenerate)", fontsize=5.8, color=N["good"],
+             ha="left", va="center", linespacing=1.0)
     axb.bar(range(4), base, 0.62, color=cols)
     for i, b in enumerate(base):
         axb.text(i, b + 0.02, f"{b:.2f}", ha="center", va="bottom", fontsize=6.6,
