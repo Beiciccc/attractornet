@@ -28,27 +28,28 @@ the symbolic label cache are publicly available at
 
 \begin{abstract}
 Boolean networks (BNs) are a standard qualitative model of gene-regulatory and
-signalling dynamics; biologically meaningful behaviour is captured by attractors and
-by reachability between states, both hard to compute exactly in general. Classical theory
-relates a BN's interaction graph to its dynamics only through necessary conditions
-and bounds: the wiring diagram provably under-determines the attractor set. We turn
-this into a well-posed learning problem with free, exact supervision. Using an exact
-symbolic oracle for ground-truth labels, we (i) quantify that a predictor restricted
-to graph topology is at chance (\auroc{} $0.56$), because fixing the wiring and
-varying only the Boolean functions flips the attractor label for $84$--$88\%$ of
-wirings; and (ii) introduce a sign-aware, size-agnostic graph neural network (GNN)
-that reads the local Boolean logic and predicts \emph{per-node asynchronous
-activation reachability}---which genes can switch on from a quiescent state. In
-distribution the GNN beats a gradient-boosted tree given \emph{all} truth-table bits,
-specifically on reachability ($0.96$ vs $0.92$) and not on the more global has-cyclic
-property---a controlled inductive-bias effect. Trained only on small synthetic BNs,
-the GNN transfers \emph{zero-shot} to real curated gene-regulatory networks from the
-biodivine-boolean-models collection, predicting per-node activation reachability at
-pooled \auroc{} $0.91$ ($95\%$ CI $[0.88,0.93]$) and beating every size-agnostic
-baseline, including a CANA effective-connectivity baseline whose local-feature mapping
-does not transfer. A sign\,/\,no-sign\,/\,MLP ablation shows the gain is carried by
-sign-aware message passing, not recomputed canalization. All labels come from exact symbolic
-computation---no manual annotation---and all experiments run on a single GPU.
+signalling dynamics, in which the behaviour of interest is captured by attractors and
+by reachability between states. Both are hard to compute exactly in general. Classical
+theory connects a BN's interaction graph to its dynamics only through necessary
+conditions and bounds, so the wiring diagram provably under-determines the attractor
+set. We use this gap to pose a well-defined learning problem with free, exact
+supervision. With an exact symbolic oracle supplying ground-truth labels, we first
+measure the gap itself: a predictor restricted to graph topology performs at chance
+(\auroc{} $0.56$), because fixing the wiring and varying only the Boolean functions
+flips the attractor label for $84$--$88\%$ of wirings. We then introduce a sign-aware,
+size-agnostic graph neural network (GNN) that reads the local Boolean logic and
+predicts \emph{per-node asynchronous activation reachability}, that is, which genes can
+switch on from a quiescent state. In distribution, the GNN beats a gradient-boosted
+tree given \emph{all} truth-table bits on reachability ($0.96$ vs $0.92$), but not on
+the more global has-cyclic property; we attribute this selective win to an inductive
+bias rather than to capacity. Trained only on small synthetic BNs, the same GNN then
+transfers \emph{zero-shot} to real curated gene-regulatory networks from the
+biodivine-boolean-models collection, reaching pooled \auroc{} $0.91$ ($95\%$ CI
+$[0.88,0.93]$) and outperforming every size-agnostic baseline, including a CANA
+effective-connectivity baseline whose local-feature mapping fails to transfer. A
+sign\,/\,no-sign\,/\,MLP ablation traces the gain to sign-aware message passing rather
+than to recomputed canalization. Because all labels come from exact symbolic
+computation, the method needs no manual annotation and runs on a single GPU.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -63,31 +64,31 @@ Boolean networks (BNs) are a canonical qualitative model of gene regulation,
 signalling, and cell-fate decision-making: each gene is a binary node, and a Boolean
 update function of its regulators encodes the combinatorial logic of activation and
 repression~\cite{kauffman,thomasoriginal}. The biologically meaningful predictions of
-a BN are its \emph{attractors}---the long-run cyclic or steady patterns identified
-with cell phenotypes---and its \emph{reachability} structure: from a given state,
-which configurations, and which individual gene activations, the dynamics can attain.
-A recurring systems-biology question is which genes can be switched on from a
-quiescent (all-OFF) state, and by what regulatory routes; this underlies reprogramming
-and signal-response analysis.
+a BN are its \emph{attractors}, the long-run cyclic or steady patterns identified
+with cell phenotypes, together with its \emph{reachability} structure: from a given
+state, which configurations and which individual gene activations the dynamics can
+attain. A question that recurs across systems biology is which genes can be switched on
+from a quiescent (all-OFF) state, and by what regulatory routes. It underlies
+reprogramming and signal-response analysis.
 
 On the structural side the theory is sharp. Thomas's rules tie multistationarity to
 positive feedback circuits and sustained oscillation to negative
 circuits~\cite{richard2007,thomasreview}; Aracena bounds the number of fixed points by
 the positive feedback vertex set~\cite{aracena2008}. Yet these are \emph{necessary
-conditions and bounds}, never determinations: the same signed interaction graph admits
-update functions with one attractor or many, and deciding the count from the graph
-alone is \#P-complete~\cite{pcomplete}. The interaction graph, in short, does not fix
-the dynamics---the logic does.
+conditions and bounds} rather than determinations. The same signed interaction graph
+admits update functions with one attractor or with many, and deciding the count from
+the graph alone is \#P-complete~\cite{pcomplete}. The interaction graph, in short, does
+not fix the dynamics; the logic does.
 
-We take this under-determination as the precondition for a \emph{learning} problem
-(Fig.~\ref{fig:pipeline}). If the graph does not determine the dynamics, a model
-predicting a dynamical property from the graph alone must be at chance---and any model
-that succeeds must extract information from the \emph{logic}. This makes ``predict an
-expensive dynamical property from structure-plus-logic'' a well-posed supervised task
-with a built-in identifiability guarantee and a free, exact label source (a symbolic
-oracle), requiring no manual annotation. We instantiate it for \emph{asynchronous
-reachability}, a property that is PSPACE-hard to compute exactly in general, is
-biologically central, and---unlike the mere existence of attractors---is fundamentally
+This under-determination is what turns prediction into a genuine \emph{learning}
+problem (Fig.~\ref{fig:pipeline}). If the graph does not determine the dynamics, then a
+model reading the graph alone can do no better than chance, and any model that succeeds
+must be drawing on the \emph{logic}. Predicting a dynamical property from structure and
+logic together is therefore a well-posed supervised task, with a built-in
+identifiability guarantee and a free, exact label source in the symbolic oracle, and
+with no need for manual annotation. We instantiate it for \emph{asynchronous
+reachability}. This property is PSPACE-hard to compute exactly in general, it is
+biologically central, and, unlike the mere existence of attractors, it is fundamentally
 a \emph{propagation} phenomenon.
 
 Our learner is a sign-aware, size-agnostic GNN that reads each node's local Boolean
@@ -106,7 +107,7 @@ $0.56$), certifying that a learned signal must come from the logic
 \item \emph{A logic-aware, sign-aware, size-agnostic GNN} predicting asynchronous
 reachability that, in distribution, beats a gradient-boosted tree given \emph{all}
 truth-table bits specifically on reachability and not on the global has-cyclic
-property---a controlled inductive-bias result. A sign\,/\,no-sign\,/\,MLP ablation and
+property; this reflects an inductive bias rather than raw capacity. A sign\,/\,no-sign\,/\,MLP ablation and
 a dedicated CANA effective-connectivity baseline isolate sign-aware propagation as the
 source of the gain (\S\ref{sec:method},~\S\ref{sec:ablation}).
 \item \emph{Zero-shot transfer to real GRNs.} Trained only on synthetic BNs, the GNN
@@ -157,8 +158,8 @@ interaction graph only bounds it~\cite{aracena2008,pcomplete}; the graph
 under-determines attractors and reachability (\S\ref{sec:identifiability}). Hence
 predicting these properties from structure-plus-logic is non-trivial precisely where
 the graph is uninformative. We emphasize that our aim is \emph{not} to replace the exact
-symbolic solver on a speed basis---on the curated networks studied here the symbolic
-oracle is itself fast---but to establish that the logic carries \emph{transferable}
+symbolic solver on a speed basis (on the curated networks studied here the symbolic
+oracle is itself fast), but to establish that the logic carries \emph{transferable}
 reachability structure: a single learned model generalizes across networks it never
 saw, whereas an exact solver must recompute each network from scratch and learns
 nothing portable.
@@ -173,13 +174,13 @@ logic, not the wiring, shapes the state-transition graph~\cite{sil2024}. We quan
 this gap as a control; we do not claim it as new.
 
 \textbf{Predicting BN dynamics.} Rumiantsau \emph{et al.}~\cite{spectral2023} predict
-BN attractors from structure via spectral analysis---non-learned, targeting fixed-point
+BN attractors from structure via spectral analysis, which is non-learned and targets fixed-point
 patterns, with no asynchronous reachability and no transfer. Weidner \emph{et
 al.}~\cite{weidner2021} rank node dynamic-impact from graph-theoretic features (a
 forest on graph measures); this is exactly our topology baseline, which we show is
 near-chance for reachability. GATTACA~\cite{gattaca} pairs a GNN with reinforcement
 learning for cellular-reprogramming \emph{control}, but \emph{assumes} attractors are
-pre-computed by a separate procedure---a different task, with the dynamics handed to
+pre-computed by a separate procedure, a different task in which the dynamics are handed to
 the model rather than predicted. To our knowledge, no prior work learns to predict
 asynchronous reachability of BNs from local logic, and none demonstrates
 synthetic$\to$real transfer.
@@ -231,8 +232,8 @@ labelled by symbolic BDD reachability.}
 \section{Tasks and the Exact Oracle}
 \label{sec:tasks}
 \textbf{Prediction tasks.} We study three exact-oracle labels: (a)
-\emph{has-cyclic-attractor}---a synchronous attractor of period $>1$ exists; (b)
-\emph{attractor count}; and (c)---our headline---\emph{per-node activation
+\emph{has-cyclic-attractor}, whether a synchronous attractor of period $>1$ exists; (b)
+\emph{attractor count}; and (c), our headline task, \emph{per-node activation
 reachability} as defined in \S\ref{sec:background}. Tasks (a)--(b) are global
 network-level properties; task (c) is node-level and propagation-structured.
 
@@ -319,13 +320,13 @@ logic rather than the wiring.
 \textbf{Design.} We generate $480$ fixed-wiring families ($n\in\{12,14\}$,
 $K\in\{2,3,4\}$) and draw $8$ logic variants (random and nested-canalizing) per family
 on the \emph{same} wiring, labelling each exactly. A \emph{within-graph} split places
-different logic variants of the same wirings in train and test. Crucially we
-\emph{balance} the random/canalizing mix across the split: a naive variant-parity split
+different logic variants of the same wirings in train and test. One detail matters here:
+we \emph{balance} the random/canalizing mix across the split, because a naive variant-parity split
 inadvertently trains on all-random and tests on all-canalizing logic, leaking a
 distribution shift that artificially depresses scores. Balancing removes this confound.
 
 \textbf{Results.} Holding the wiring fixed and varying only the logic flips the label
-for $84\%$ of wirings (has-cyclic) and $88\%$ (reachability)---so on these instances
+for $84\%$ of wirings (has-cyclic) and $88\%$ (reachability). On these instances,
 any topology-only predictor is, by construction, near-chance. Empirically a topology
 predictor reaches \auroc{} $0.558$, a shuffle-label null $0.52$
 (Table~\ref{tab:identify}, Fig.~\ref{fig:learn}a). The signed graph (Thomas level) helps for
@@ -377,7 +378,7 @@ gain beyond $\lambda$ & $+0.073$ & $+0.772$\\
 \caption{The logic, not the wiring, carries learnable reachability structure.
 \textbf{a}, Within-graph \auroc{} by feature group (de-confounded): topology is at
 chance for both tasks, the signed graph helps only has-cyclic, and only logic-aware
-features predict reachability. \textbf{b}, The GNN's advantage is task-specific---it
+features predict reachability. \textbf{b}, The GNN's advantage is task-specific: it
 beats the all-bits tree on asynchronous reachability (propagation-shaped) but loses on
 the global has-cyclic property. \textbf{c}, Sign-aware propagation, not canalization:
 in-distribution (open bars) and zero-shot transfer (filled bars) \auroc{} for the GNN
@@ -425,13 +426,14 @@ R-GCN~\cite{rgcn} and signed graph convolution~\cite{signedgcn}, with the two re
 being positive and negative regulation; we do not claim the architecture itself as novel.
 Our contribution is the \emph{task framing} (predicting logic-dependent reachability where
 the graph is provably uninformative) and the \emph{zero-shot synthetic$\to$real transfer},
-for which a sign-aware encoder is the natural and, as we show, load-bearing choice. We use
+for which a sign-aware encoder is the natural choice and, as the ablation shows, a
+decisive one. We use
 three layers ($64$ hidden units) and a per-node sigmoid head (Alg.~\ref{alg:gnn}),
 implemented as sparse edge-list message passing (scatter-add) so it runs on networks of
 any size (trained at $n\le16$, applied to $n$ up to hundreds). Separating sign is
 biologically motivated: whether activation propagates to a node depends on whether its
-regulators activate or inhibit it---information a sign-agnostic aggregator discards. The
-ablation in \S\ref{sec:ablation} confirms this term is load-bearing.
+regulators activate or inhibit it, information that a sign-agnostic aggregator discards. The
+ablation in \S\ref{sec:ablation} confirms that this term is doing the work.
 
 \begin{algorithm}[t]
 \caption{Sign-aware GNN forward pass (per-node head)}
@@ -448,11 +450,11 @@ ablation in \S\ref{sec:ablation} confirms this term is load-bearing.
 
 \textbf{Baselines.} We compare against three baselines, in increasing strength.
 \emph{Flat-TT}: a gradient-boosted tree on the concatenation of \emph{all} node
-truth-table bits plus the signed wiring---an upper bound on the logic information
+truth-table bits plus the signed wiring, an upper bound on the logic information
 available, but applicable only at a fixed small size. \emph{Feature tree}: a
 gradient-boosted tree on the same size-agnostic arity-invariant features the GNN uses
 (without the graph structure). \emph{CANA tree}: a gradient-boosted tree on a full
-CANA-style canalization suite---per-input activity, effective connectivity $k_e$, input
+CANA-style canalization suite: per-input activity, effective connectivity $k_e$, input
 redundancy, activity distribution, canalizing depth, bias (\S\ref{sec:ablation}). The
 last directly tests whether the GNN merely recomputes canalization.
 
@@ -465,15 +467,15 @@ labels are used in training. All results are mean$\pm$std over $3$ training seed
 \S\ref{sec:tasks} (Table~\ref{tab:coverage}). We evaluate \auroc{} for the binary tasks.
 
 \subsection{In-distribution and the inductive-bias result}
-On the de-confounded within-graph split the flat-TT tree---which has \emph{all} the
-logic bits---reaches $0.803$ (has-cyclic) and $0.921$ (reachability), far above the
+On the de-confounded within-graph split the flat-TT tree, which has \emph{all} the
+logic bits, reaches $0.803$ (has-cyclic) and $0.921$ (reachability), far above the
 $0.52$ null and generalizing leave-graph-out ($0.819/0.916$). The GNN beats the flat-TT
 tree on \emph{reachability} ($0.962$ vs $0.921$) but \emph{loses} on the global
-\emph{has-cyclic} property ($0.751$ vs $0.803$, Fig.~\ref{fig:learn}b). This selective win is
-the signature of an inductive bias, not raw capacity: message passing captures the
-propagation structure of reachability, whereas a feature-interaction tree does as well
-or better on a property that is not propagation-shaped. The GNN is thus the right tool
-specifically for reachability.
+\emph{has-cyclic} property ($0.751$ vs $0.803$, Fig.~\ref{fig:learn}b). A win on one task
+and a loss on the other points to an inductive bias rather than to greater capacity:
+message passing captures the propagation structure of reachability, whereas a
+feature-interaction tree does as well or better on a property that is not
+propagation-shaped. The GNN is therefore suited specifically to reachability.
 
 
 \subsection{Zero-shot transfer to real GRNs}
@@ -489,7 +491,7 @@ $[0.064,0.116]$, which excludes zero. The per-net \auroc{} distribution is right
 (median $0.99$, IQR $[0.85,1.00]$, mean $0.90$; Fig.~\ref{fig:transfer}a); we report the pooled
 mean as the headline and the median only as a descriptor of the typical network. The
 flat-TT tree is \emph{inapplicable} at these sizes (variable $n$ and arity), and exact
-solvers do not generalize---they recompute per network.
+solvers do not generalize; they recompute per network.
 
 \textbf{Failure analysis.} $12$ of $118$ networks fall below \auroc{} $0.7$. Contrary to
 what one might guess, this tail is \emph{not} explained by size: $10/12$ have $n\ge15$,
@@ -514,16 +516,17 @@ principled non-degenerate choice rather than a cherry-picked one.}
 
 \subsection{The gain is sign-aware propagation, not canalization}
 \label{sec:ablation}
-A natural concern is that reachability is recomputable from known \emph{local} logic
-features (canalization, effective connectivity), so that transfer is parasitic on real
-GRNs being heavily canalizing. We refute this two ways (Table~\ref{tab:ablation},
+One might object that reachability is already recoverable from known \emph{local} logic
+features such as canalization and effective connectivity, so that the transfer result
+merely exploits the fact that real GRNs are heavily canalizing. Two experiments argue
+against this reading (Table~\ref{tab:ablation},
 Fig.~\ref{fig:learn}c).
 
 First, an ablation of three GNN variants: \emph{sign} (separate $\pm$ transforms),
-\emph{no-sign} (message passing, sign ignored), and \emph{MLP} (no message passing---a
+\emph{no-sign} (message passing, sign ignored), and \emph{MLP} (no message passing, a
 neural model on the per-node features, i.e.\ a neural canalization baseline). In
 distribution, message passing adds ${+}0.026$ over the MLP and sign-awareness a further
-${+}0.021$; on real GRNs the effect sharpens---sign-awareness adds ${+}0.093$, with the
+${+}0.021$; on real GRNs the effect sharpens: sign-awareness adds ${+}0.093$, with the
 sign-agnostic GNN collapsing to the feature-baseline level. Propagation, and the sign of
 regulation, are what the GNN exploits.
 
@@ -532,7 +535,7 @@ $a_i=\Pr_x[f(x)\neq f(x\oplus e_i)]$, effective connectivity $k_e=\sum_i a_i$, i
 redundancy $r=1-k_e/k$, the activity distribution, canalizing depth, and bias. The GNN
 beats this strengthened baseline by ${+}0.097$ in distribution; on transfer the CANA
 tree drops to \auroc{} $0.465$, slightly below chance. We read the below-chance value not
-as evidence that canalization is irrelevant to the dynamics---it is not---but as a
+as evidence that canalization is irrelevant to the dynamics (it is not), but as a
 \emph{distribution-shift artifact}: the local canalization$\to$activatability relation
 learned on the synthetic ensemble inverts on real GRNs, so a model relying only on those
 local features fails to port. The substantive comparison is therefore the in-distribution
@@ -587,13 +590,13 @@ full logic features & $0.921$ & $0.897$\\
 \subsection{Application: the budding-yeast cell cycle}
 \label{sec:vignette}
 To make the predictions concrete, we apply the synthetic-trained GNN \emph{zero-shot} to
-the budding-yeast cell-cycle network---a classic Boolean GRN model in the BBM collection
-($n=20$; source: \emph{PLoS ONE}, doi:10.1371/journal.pone.0045780)---and ask which genes
+the budding-yeast cell-cycle network, a classic Boolean GRN model in the BBM collection
+($n=20$; source: \emph{PLoS ONE}, doi:10.1371/journal.pone.0045780), and ask which genes
 are activatable from G1 quiescence (the all-OFF state). The predictor attains \auroc{}
 $0.91$ over all $20$ genes (thresholded accuracy $0.70$, $14/20$ genes correct): it ranks
 the core cyclins and regulators (Clb2, Clb5, Cdh1, Sic1, Whi5) as activatable and the
 cell-size, spindle, and budding checkpoints (Size, SpindleCP, BuddingCP) and Cln2 as
-\emph{not} spontaneously activatable from quiescence (Table~\ref{tab:vignette})---qualitatively
+\emph{not} spontaneously activatable from quiescence (Table~\ref{tab:vignette}), which is qualitatively
 consistent with cell-cycle entry requiring size and signal cues rather than arising
 spontaneously. The errors are intermediate regulators near the activatable boundary
 (e.g.\ Cdc20, Cln3, FEAR). This is an \emph{illustration} of the prediction, not an
@@ -634,7 +637,7 @@ Per-node reachability difficulty depends strongly on the \emph{driving condition
 the quiescent activation task we study is the principled non-degenerate choice rather
 than a hand-picked one. We verified this on the real BBM networks: the all-OFF /
 inputs-OFF convention is well-behaved (pooled base $0.34$), whereas the natural
-alternatives all \emph{saturate} (Fig.~\ref{fig:transfer}b)---a free-input ``activatable
+alternatives all \emph{saturate} (Fig.~\ref{fig:transfer}b): a free-input ``activatable
 under some signal'' variant (mean base $0.88$), a fully-stimulated condition (inputs
 fixed ON; mean per-net base $0.82$), and a silenceability condition (reaching $0$ from
 the all-ON state; mean base $0.93$) each make almost every gene reachable, leaving little
@@ -644,25 +647,26 @@ the framework under richer, non-saturating multi-signal conditions is important 
 work.
 
 There is a genuine synthetic$\to$real distribution shift (synthetic activation base rate
-$0.86$ vs real $0.34$); the GNN transfers despite it---the central strength---but a
+$0.86$ vs real $0.34$); the GNN transfers in spite of it, which is its main strength, although a
 synthetic ensemble matched to GRN statistics (scale-free wiring, realistic
 nested-canalizing prevalence) could shrink the shift and is promising future work.
 Finally, exact synthetic ground truth limits training networks to $n\le16$. We stress
 that on the curated networks studied here the symbolic oracle is fast (it labels almost
-all of them in well under a second), so the contribution is a scientific one---logic
-carries transferable reachability structure---rather than a computational speed-up; we
+all of them in well under a second), so the contribution is a scientific one, namely
+that the logic carries transferable reachability structure, rather than a computational speed-up; we
 make no efficiency claim over the exact solver in this regime.
 
 \section{Conclusion}
 The wiring diagram is necessary but far from sufficient for a Boolean network's
-dynamics---a classical fact we turn into a well-posed learning problem with free, exact
-supervision. A sign-aware, size-agnostic GNN reading the local logic predicts
-asynchronous reachability, beats an all-truth-table-bits model precisely where
-propagation matters, and---trained only on small synthetic networks---transfers
-zero-shot to real gene-regulatory networks, outperforming every size-agnostic baseline,
-including a canalization model that fails to transfer at all. The logic carries
-learnable, transferable reachability structure that no graph-only model can recover, and
-a propagation-matched architecture is what captures it.
+dynamics. We have used that classical fact as the starting point for a well-posed
+learning problem with free, exact supervision. A sign-aware, size-agnostic GNN that
+reads the local logic predicts asynchronous reachability, and it beats an
+all-truth-table-bits model exactly where propagation matters. Trained only on small
+synthetic networks, the same model transfers zero-shot to real gene-regulatory networks
+and outperforms every size-agnostic baseline, including a canalization model that does
+not transfer at all. The logic, then, carries learnable and transferable reachability
+structure that no graph-only model can recover, and a propagation-matched architecture
+is what brings it within reach.
 
 \section*{Reproducibility}
 All labels are computed by exact symbolic tools (state-transition-graph enumeration;
