@@ -199,34 +199,24 @@ curated biological BNs, with exact attractor/reachability analysis from
 \texttt{biodivine\_aeon} and \texttt{biobalm} (symbolic, BDD-based)~\cite{aeon,aeoncav,biobalm},
 repurposed here as a zero-cost supervision source.
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\begin{tikzpicture}[
-  font=\scriptsize,
-  box/.style={draw,rounded corners,align=center,inner sep=3pt,minimum height=8mm,fill=blue!5},
-   db/.style={draw,rounded corners,align=center,inner sep=3pt,minimum height=8mm,fill=orange!8},
-  arr/.style={-{Latex[length=2mm]},thick}]
-\node[box] (syn) {Synthetic BNs\\($n\le16$)};
-\node[box,below=4mm of syn] (oracle) {Exact STG oracle\\(Algs.~1--2)};
-\node[box,right=9mm of syn] (feat) {Arity-invariant\\features + signs};
-\node[box,below=4mm of feat] (gnn) {Sign-aware\\size-agnostic GNN};
-\node[db,right=9mm of feat] (real) {Real BBM GRNs\\($n\le70$)};
-\node[db,below=4mm of real] (bdd) {Symbolic BDD\\labels (aeon)};
-\node[box,below=10mm of gnn] (pred) {Zero-shot per-node\\reachability $\approx0.90$};
-\draw[arr] (syn)--(oracle);
-\draw[arr] (syn)--(feat);
-\draw[arr] (oracle.east)-- ++(2mm,0) |- (gnn.west);
-\draw[arr] (feat)--(gnn);
-\draw[arr] (real)--(bdd);
-\draw[arr] (real.west)-- ++(-2mm,0) |- (feat.east);
-\draw[arr] (gnn)--(pred);
-\draw[arr] (bdd.south) |- (pred.east);
-\end{tikzpicture}
-\caption{Pipeline. An exact state-transition-graph oracle labels small synthetic BNs;
-a sign-aware, size-agnostic GNN trained on their logic transfers zero-shot to real GRNs
-labelled by symbolic BDD reachability.}
+\includegraphics[width=\textwidth]{fig_pipeline.pdf}
+\caption{\textbf{Overview.} \emph{Train data}: an exact state-transition-graph oracle labels
+small synthetic Boolean networks ($n\le16$) with per-node asynchronous activation
+reachability from the all-OFF quiescent state. The key inset shows why this is non-trivial:
+fixing the wiring and changing only the Boolean logic changes the reachable set.
+\emph{Model}: a sign-aware, size-agnostic GNN reads arity-invariant logic features and edge
+signs, passing messages through separate transforms for activating ($+$) and inhibiting
+($-$) regulators; it is trained on synthetic logic only, with no real-network labels.
+\emph{Transfer}: the trained model is applied zero-shot to real gene-regulatory networks
+from the biodivine-boolean-models collection ($n\le70$), whose ground truth is obtained
+independently by symbolic BDD reachability. \emph{Output}: predicted per-gene activatability
+from quiescence, validated against the exact oracle (pooled \auroc{} $0.91$, $95\%$ CI
+$[0.88,0.93]$). Green arrows denote activation, red bars inhibition; filled green nodes are
+predicted activatable. Gene names are illustrative.}
 \label{fig:pipeline}
-\end{figure}
+\end{figure*}
 
 \section{Tasks and the Exact Oracle}
 \label{sec:tasks}
