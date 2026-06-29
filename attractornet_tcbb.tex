@@ -325,7 +325,8 @@ carries the reachability signal.
 
 \textbf{Not merely chaos.} One might worry the learnable residual is just the
 Kauffman--Derrida order--chaos transition. Table~\ref{tab:chaos} controls for this: the
-structural/logic features beat the mean-field sensitivity $\lambda$ (the Derrida slope)
+structural/logic features beat the mean-field sensitivity $\lambda$ (the Derrida
+slope~\cite{derrida1986})
 by ${+}0.07$ \auroc{}, and in the ordered regime ($K=1$) structure predicts the
 attractor count ($R^2=0.73$) where $\lambda$ alone is uninformative ($R^2=-0.05$). The
 learnable signal is genuine logic-dependent structure, not the chaos order parameter.
@@ -579,8 +580,8 @@ full logic features & $0.921$ & $0.897$\\
 \subsection{Application: the budding-yeast cell cycle}
 \label{sec:vignette}
 To make the predictions concrete, we apply the synthetic-trained GNN \emph{zero-shot} to
-the budding-yeast cell-cycle network, a classic Boolean GRN model in the BBM collection
-($n=20$; source: \emph{PLoS ONE}, doi:10.1371/journal.pone.0045780), and ask which genes
+the budding-yeast cell-cycle network, a classic Boolean GRN model in the BBM
+collection~\cite{yeast_cc} ($n=20$), and ask which genes
 are activatable from G1 quiescence (the all-OFF state). The predictor attains \auroc{}
 $0.91$ over all $20$ genes (thresholded accuracy $0.70$, $14/20$ genes correct): it ranks
 the core cyclins and regulators (Clb2, Clb5, Cdh1, Sic1, Whi5) as activatable and the
@@ -687,7 +688,8 @@ networks and bushiness of their state transition graph,'' \emph{Brief. Bioinform
 \bibitem{spectral2023} D. Rumiantsau, A. Lesne, and M.-T. H\"utt, ``Predicting
 attractors from spectral properties of stylized gene regulatory networks,'' \emph{Phys.
 Rev. E}, vol. 108, no. 1, art. 014402, 2023.
-\bibitem{weidner2021} F. M. Weidner \emph{et al.}, ``Capturing dynamic relevance in
+\bibitem{weidner2021} F. M. Weidner, J. D. Schwab, S. D. Werle, N. Ikonomi, L. Lausser,
+and H. A. Kestler, ``Capturing dynamic relevance in
 Boolean networks using graph-theoretical measures,'' \emph{Bioinformatics}, vol. 37, no.
 20, pp. 3530--3537, 2021.
 \bibitem{gattaca} A. Mizera and J. Zarzycki, ``The GATTACA framework: Graph neural
@@ -710,11 +712,15 @@ Boolean networks,'' \emph{Bioinformatics}, vol. 38, no. 21, pp. 4978--4980, 2022
 \bibitem{biobalm} V.-G. Trinh, K. H. Park, S. Pastva, and J. C. Rozum, ``Mapping the
 attractor landscape of Boolean networks with biobalm,'' \emph{Bioinformatics}, vol. 41,
 no. 5, art. btaf280, 2025.
+\bibitem{derrida1986} B. Derrida and Y. Pomeau, ``Random networks of automata: a simple
+annealed approximation,'' \emph{Europhys. Lett.}, vol. 1, no. 2, pp. 45--49, 1986.
 \bibitem{rgcn} M. Schlichtkrull, T. N. Kipf, P. Bloem, R. van den Berg, I. Titov, and M.
 Welling, ``Modeling relational data with graph convolutional networks,'' in \emph{The
 Semantic Web (ESWC 2018)}, LNCS, vol. 10843. Springer, 2018, pp. 593--607.
 \bibitem{signedgcn} T. Derr, Y. Ma, and J. Tang, ``Signed graph convolutional networks,''
 in \emph{Proc. IEEE Int. Conf. Data Mining (ICDM)}, 2018, pp. 929--934.
+\bibitem{yeast_cc} R. G. Todd and T. Helikar, ``Ergodic sets as cell phenotype of budding
+yeast cell cycle,'' \emph{PLoS ONE}, vol. 7, no. 10, art. e45780, 2012.
 \end{thebibliography}
 
 \end{document}
